@@ -1,0 +1,7 @@
+In django the folder is built mainly on projects and apps.
+A project will have settings and configurations for multiple apps
+Each app will have its own models and views
+To run django app, type python manage.py runserver
+to create new apps, type python manage.py startapp chats
+to check changes in db schema, type python manage.py makemigrations
+to make changes in db schema, type python manage.py migrate
