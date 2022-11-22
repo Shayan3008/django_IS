@@ -6,4 +6,4 @@ def index(request):
         "variable":"This is sent"
     }
     # return HttpResponse("This is Response")
-    return render(request,"index.html",context)
+    return render(request,"chats/chat.html",context)

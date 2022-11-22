@@ -7,7 +7,7 @@ def index(request):
         try:
             Email = request.POST.get("Email")
             password = request.POST.get("password")
-            print(chatUsers.objects.filter(email = Email)[0].email)
+            print(chatUsers.objects.filter(email = Email)[0].id)
         except chatUsers.DoesNotExist:
             return render(request,"Login/login.html")
 
