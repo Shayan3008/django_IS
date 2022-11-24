@@ -17,10 +17,15 @@
             <h1>Chats </h1>
             <div class="mb-3">
                 <label for="exampleFormControlInput1" class="form-label">Enter Message:</label>
-                <input type="message" class="form-control" name="Email" id="message"
-                    placeholder="message">
+                <input type="message" class="form-control" name="Email" id="message" placeholder="message">
             </div>
-            <button class="btn btn-primary" id="submit">send</button>
+            <div class="w-25 row">
+                <button class="btn btn-primary col-12" id="submit">send</button>
+                <a id="download">Download</a>
+                <button class="btn btn-primary col-12 mt-2" id="record">record</button>
+                <button class="btn btn-primary col-12 mt-2" id="stop">Stop</button>
+            </div>
+
             <div id="messages">
 
             </div>
@@ -30,15 +35,18 @@
             crossorigin="anonymous"></script>
         <script type="text/javascript">
             let messages = document.querySelector("#messages")
-
+            let downloadLink = document.querySelector("#download")
+            let record = document.querySelector("#record")
+            let stop = document.querySelector("#stop")
             let url = `ws://${window.location.host}/ws/practice`
             const ChatSocket = new WebSocket(url)
-            ChatSocket.onmessage = (e)=>{
+            ChatSocket.onmessage = (e) => {
                 let data = JSON.parse(e.data)
-                if(data.type == "chat"){
+                if (data.type == "chat") {
+                    console.log(data)
                     const div = document.createElement("div")
                     const p_element = document.createElement("p")
-                    const node = document.createTextNode(data.msg)
+                    const node = document.createTextNode(data.message)
                     p_element.append(node)
                     div.append(p_element)
                     messages.append(div)
@@ -46,10 +54,45 @@
             }
             document.querySelector("#submit").onclick = (e) => {
                 ChatSocket.send(JSON.stringify({
-                    "message":document.querySelector("#message").value
+                    "message": document.querySelector("#message").value
                 }))
                 document.querySelector("#message").value = ""
             }
+            record.onclick = (e) => {
+                navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: false
+                }).then(handleSuccess)
+            }
+            const handleSuccess = (stream) => {
+                const options = { mimeType: 'audio/webm' };
+                const recordedChunks = [];
+                const mediaRecorder = new MediaRecorder(stream, options);
+                console.log("Started")
+                mediaRecorder.addEventListener('dataavailable', function (e) {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                });
+
+                mediaRecorder.addEventListener('stop', function () {
+                    downloadLink.href = URL.createObjectURL(new Blob(recordedChunks));
+                    console.log(downloadLink)
+                    downloadLink.download = 'test.wav';
+                    downloadLink.click()
+                    ChatSocket.send(JSON.stringify({
+                        "type": "download",
+                        "path1": "C:/Users/DELL/Downloads/test.wav",
+                        "path2": "C:/Users/DELL/Desktop/IS/IS_CHAT/chats/audio"
+                    }))
+                });
+
+                stop.addEventListener('click', function () {
+                    console.log("Stopped")
+                    mediaRecorder.stop();
+                });
+
+                mediaRecorder.start();
+            };
+
         </script>
     </body>
 
