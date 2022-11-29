@@ -1,0 +1,16 @@
+<div class="w-50 m-auto mt-3">
+    <h1>Chats </h1>
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">Enter Message:</label>
+        <input type="message" class="form-control" name="Email" id="message" placeholder="message">
+    </div>
+    <div class="w-25 row">
+        <button class="btn btn-primary col-12" id="submit">send</button>
+        <a id="download"></a>
+        <button class="btn btn-primary col-12 mt-2" id="record">record</button>
+        <button class="btn btn-primary col-12 mt-2" id="stop">Stop</button>
+    </div>
+
+    <div id="messages">
+    </div>
+</div>

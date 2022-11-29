@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -13,52 +14,93 @@
 <body>
 
     <body>
-        <div class="w-50 m-auto mt-3">
-            <h1>Chats </h1>
-            <div class="mb-3">
-                <label for="exampleFormControlInput1" class="form-label">Enter Message:</label>
-                <input type="message" class="form-control" name="Email" id="message" placeholder="message">
+        <input class="current" style="display: none;" value={{Id}}>
+        <div class="d-flex">
+            <div style="width: 20%;height: 100vh; border-right: 1px solid black; display:flex;flex-direction:column;">
+                <div>
+                    <h2 class="text-center pt-2" style="background-color: lightgray;">
+                        Users
+                    </h2>
+                </div>
+                {% for i in User %}
+                <div id={{i.id}} class="pt-4 messageOpen"
+                    style="display: flex; justify-content: center; align-items: center;border-bottom: 1px solid black;cursor: pointer;">
+                    <h4 id={{i.id}}>{{i.name}}</h4>
+                </div>
+                {% endfor %}
             </div>
-            <div class="w-25 row">
-                <button class="btn btn-primary col-12" id="submit">send</button>
-                <a id="download">Download</a>
-                <button class="btn btn-primary col-12 mt-2" id="record">record</button>
-                <button class="btn btn-primary col-12 mt-2" id="stop">Stop</button>
-            </div>
-
-            <div id="messages">
+            <div class="content hidden" style="width: 80%;display: none;">
+                <h2 class="text-center pt-2 m-0" style="background-color: lightgray;">
+                    Messages
+                </h2>
+                <div>
+                    <div class="content" id="messages" style="height: 87.6vh;">
+                    </div>
+                    <div style="height: 4.8vh; display: flex;">
+                        <input class="w-100 h-100" id="message" name="Message" placeholder="Enter Your Message" />
+                        <button id="submit" class="btn btn-primary">Send</button>
+                        <button id="record" class="btn btn-primary">Record</button>
+                    </div>
+                </div>
 
             </div>
         </div>
+
+
+        <!-- SCRIPT FOR JQUERY -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
             crossorigin="anonymous"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+        <!-- SCRIPT FOR PLAIN JAVASCRIPT -->
         <script type="text/javascript">
+            // Variable Declaration
+            let ChatSocketDict = {}
+            let id = document.querySelector(".current").value
+            let messagePage = document.querySelector(".content")
             let messages = document.querySelector("#messages")
             let downloadLink = document.querySelector("#download")
             let record = document.querySelector("#record")
-            let stop = document.querySelector("#stop")
-            let url = `ws://${window.location.host}/ws/practice`
-            const ChatSocket = new WebSocket(url)
-            ChatSocket.onmessage = (e) => {
-                let data = JSON.parse(e.data)
-                if (data.type == "chat") {
-                    console.log(data)
-                    const div = document.createElement("div")
-                    const p_element = document.createElement("p")
-                    const node = document.createTextNode(data.message)
-                    p_element.append(node)
-                    div.append(p_element)
-                    messages.append(div)
-                }
-            }
+            console.log(record)
+            let groupId = ""
+            // Dom queries
             document.querySelector("#submit").onclick = (e) => {
-                ChatSocket.send(JSON.stringify({
+                ChatSocketDict[groupId].send(JSON.stringify({
                     "message": document.querySelector("#message").value
                 }))
                 document.querySelector("#message").value = ""
             }
+            document.querySelectorAll(".messageOpen").forEach(el => el.onclick = (e) => {
+                if (groupId !== "") {
+                    ChatSocketDict[groupId].close()
+                    delete ChatSocketDict[groupId]
+                    console.log(ChatSocketDict)
+                }
+                clickId = e.target.id
+                groupId = parseInt(id) < parseInt(clickId) ? id + clickId : clickId + id
+                url = `ws://${window.location.host}/ws/${groupId}`
+                ChatSocketDict[groupId] = new WebSocket(url)
+                ChatSocketDict[groupId].onmessage = (e) => {
+                    let data = JSON.parse(e.data)
+                    if(data.type == "chat"){
+                        let div = document.createElement("div")
+                        let text = document.createTextNode(data.message)
+                        div.append(text)
+                        messages.append(div)
+                    }
+                }
+                if (messagePage.classList.contains("hidden")) {
+                    messagePage.style.display = "block"
+                    messagePage.classList.remove("hidden")
+                }
+            })
+            // Socket Messages
+           
+
+            // RTC FOR AUDIO
             record.onclick = (e) => {
+                console.log("Recorde")
                 navigator.mediaDevices.getUserMedia({
                     audio: true,
                     video: false
@@ -74,24 +116,67 @@
                 });
 
                 mediaRecorder.addEventListener('stop', function () {
-                    downloadLink.href = URL.createObjectURL(new Blob(recordedChunks));
-                    console.log(downloadLink)
-                    downloadLink.download = 'test.wav';
-                    downloadLink.click()
-                    ChatSocket.send(JSON.stringify({
-                        "type": "download",
-                        "path1": "C:/Users/DELL/Downloads/test.wav",
-                        "path2": "C:/Users/DELL/Desktop/IS/IS_CHAT/chats/audio"
-                    }))
+                    let blob = new Blob(recordedChunks)
+                    sendAudio(blob)
                 });
 
-                stop.addEventListener('click', function () {
+                record.addEventListener('click', function () {
                     console.log("Stopped")
                     mediaRecorder.stop();
                 });
 
                 mediaRecorder.start();
             };
+
+            // AJAX
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            function sendAudio(blob) {
+                var wavFile = new File([blob], "audio.wav");
+                var form = new FormData();
+                form.append("myAudio", wavFile);
+                form.append("id",groupId)
+                $.ajax(
+                    {
+                        url: "/chat/audio/aud/",
+                        type: "POST",
+                        data: form,
+                        headers: {
+                            "X-CSRFToken": getCookie("csrftoken"),
+                        },
+                        contentType: false,
+                        processData: false,
+                        success: function (getData) {
+                            console.log(getData)
+                            let doc = "/static/" + getData
+                            console.log(doc)
+                            var x = document.createElement("AUDIO")
+                            x.src = doc
+                            x.setAttribute("controls", "controls");
+                            console.log(x)
+                            messages.append(x)
+
+                            // ChatSocket.send(JSON.stringify({
+                            //     "type":"audio",
+                            //     "path":getData
+                            // }))
+
+                        }
+                    });
+            }
 
         </script>
     </body>
