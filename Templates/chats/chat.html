@@ -67,6 +67,7 @@
             // Dom queries
             document.querySelector("#submit").onclick = (e) => {
                 ChatSocketDict[groupId].send(JSON.stringify({
+                    "type": "message",
                     "message": document.querySelector("#message").value
                 }))
                 document.querySelector("#message").value = ""
@@ -82,8 +83,9 @@
                 url = `ws://${window.location.host}/ws/${groupId}`
                 ChatSocketDict[groupId] = new WebSocket(url)
                 ChatSocketDict[groupId].onmessage = (e) => {
+                    console.log(e.data)
                     let data = JSON.parse(e.data)
-                    if(data.type == "chat"){
+                    if (data.type == "chat") {
                         let div = document.createElement("div")
                         let text = document.createTextNode(data.message)
                         div.append(text)
@@ -96,7 +98,7 @@
                 }
             })
             // Socket Messages
-           
+
 
             // RTC FOR AUDIO
             record.onclick = (e) => {
@@ -148,7 +150,7 @@
                 var wavFile = new File([blob], "audio.wav");
                 var form = new FormData();
                 form.append("myAudio", wavFile);
-                form.append("id",groupId)
+                form.append("id", groupId)
                 $.ajax(
                     {
                         url: "/chat/audio/aud/",
@@ -163,6 +165,12 @@
                             console.log(getData)
                             let doc = "/static/" + getData
                             console.log(doc)
+                            ChatSocketDict[groupId].send(JSON.stringify({
+                                "message": doc,
+                                "type": "audio",
+                                "sender": id,
+                                "receiver": clickId,
+                            }))
                             var x = document.createElement("AUDIO")
                             x.src = doc
                             x.setAttribute("controls", "controls");

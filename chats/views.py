@@ -3,13 +3,13 @@ from chats.audio.audioEncryption import audioEncrypt
 from login.models import chatUsers
 from django.http import HttpResponseRedirect
 from chats.audio.keyGeneration import keyGeneration
-
+from chats.models import KeyRoom
 # Create your views here.
 
 
 def index(request, userId):
     print(request.session)
-    if request.session.has_key("user") == False :
+    if request.session.has_key("user") == False:
         return HttpResponseRedirect("/")
     context = {}
     context["User"] = chatUsers.objects.exclude(id=int(userId))
@@ -21,9 +21,18 @@ def index(request, userId):
 def audio(request):
     if request.method == "POST":
         if request.FILES.get("myAudio", False):
+            group_id = request.POST.get("id")
             handleUploadFile(request.FILES["myAudio"])
-            Key = keyGeneration()
-            return HttpResponse(audioEncrypt(Key))
+            keyObject = KeyRoom.objects.filter(groupId=group_id)
+            if keyObject.exists:
+                
+                path = audioEncrypt(
+                    keyObject[0].key)
+            else:
+                Key = keyGeneration()
+                KeyRoom.objects.create(groupId=group_id, key=Key)
+                path = audioEncrypt(Key)
+            return HttpResponse(path)
         return HttpResponse("NO FILE FOUND")
 
 
