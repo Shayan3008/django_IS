@@ -4,6 +4,9 @@ from login.models import chatUsers
 from django.http import HttpResponseRedirect
 from chats.audio.keyGeneration import keyGeneration
 from chats.models import KeyRoom
+from chats.models import Chats
+import json
+
 # Create your views here.
 
 
@@ -25,7 +28,7 @@ def audio(request):
             handleUploadFile(request.FILES["myAudio"])
             keyObject = KeyRoom.objects.filter(groupId=group_id)
             if keyObject.exists:
-                
+
                 path = audioEncrypt(
                     keyObject[0].key)
             else:
@@ -40,3 +43,10 @@ def handleUploadFile(f):
     with open("chats/audio/" + f.name, "wb+") as destination:
         for chunk in f.chunks():
             destination.write(chunk)
+
+
+def chats(request, groupId):
+    chats = Chats.objects.filter(groupId = groupId)
+    print(type(chats))
+    print(list(chats.values()))
+    return HttpResponse(json.dumps(list(chats.values())))
