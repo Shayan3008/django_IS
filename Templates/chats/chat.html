@@ -17,32 +17,32 @@
         <input class="current" style="display: none;" value={{Id}}>
         <div class="d-flex">
             <div style="width: 20%;height: 100vh; border-right: 1px solid black; display:flex;flex-direction:column;">
-                <div>
-                    <h2 class="text-center pt-2" style="background-color: lightgray;">
-                        Users
-                    </h2>
+                <h2 class="text-center pt-2" style="background-color: lightgray; height: 7%;">
+                    Users
+                </h2>
+                <div style="height: 93%;">
+                    {% for i in User %}
+                    <div id={{i.id}} class="pt-4 messageOpen"
+                        style="display: flex; justify-content: center; align-items: center;border-bottom: 1px solid black;cursor: pointer;">
+                        <h4 id={{i.id}}>{{i.name}}</h4>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% for i in User %}
-                <div id={{i.id}} class="pt-4 messageOpen"
-                    style="display: flex; justify-content: center; align-items: center;border-bottom: 1px solid black;cursor: pointer;">
-                    <h4 id={{i.id}}>{{i.name}}</h4>
-                </div>
-                {% endfor %}
             </div>
-            <div class="content hidden" style="width: 80%;display: none;">
-                <h2 class="text-center pt-2 m-0" style="background-color: lightgray;">
+            <div class="content hidden" style="width: 80%;height: 100vh;display: none;">
+                <h2 class="text-center pt-2 m-0" style="background-color: lightgray; height: 7%;">
                     Messages
                 </h2>
-                <div>
-                    <div class="content" id="messages" style="height: 87.6vh;">
-                    </div>
-                    <div style="height: 4.8vh; display: flex;">
-                        <input class="w-100 h-100" id="message" name="Message" placeholder="Enter Your Message" />
-                        <button id="submit" class="btn btn-primary">Send</button>
-                        <button id="record" class="btn btn-primary">Record</button>
-                        <button id="stop" class="btn btn-primary">stop</button>
-                    </div>
+
+                <div class="content" id="messages" style="height: 89%; overflow-y: scroll;">
                 </div>
+                <div style="height: 4.8%; display: flex;">
+                    <input class="w-100 h-100" id="message" name="Message" placeholder="Enter Your Message" />
+                    <button id="submit" class="btn btn-primary">Send</button>
+                    <button id="record" class="btn btn-primary">Record</button>
+                    <button id="stop" class="btn btn-primary">stop</button>
+                </div>
+
 
             </div>
         </div>
@@ -53,8 +53,6 @@
             integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
             crossorigin="anonymous"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
-        <!-- SCRIPT FOR PLAIN JAVASCRIPT -->
         <script type="text/javascript">
             // Variable Declaration
             let ChatSocketDict = {}
@@ -68,186 +66,13 @@
             let clickId = ""
             let recorded = false
             // Dom queries
-            document.querySelector("#submit").onclick = (e) => {
-                ChatSocketDict[groupId].send(JSON.stringify({
-                    "message": document.querySelector("#message").value,
-                    "type": "message",
-                    "sender": id,
-                    "receiver": clickId,
-                }))
-                document.querySelector("#message").value = ""
-            }
-            document.querySelectorAll(".messageOpen").forEach(el => el.onclick = (e) => {
-                if (groupId !== "") {
-                    ChatSocketDict[groupId].close()
-                    delete ChatSocketDict[groupId]
-                }
-                clickId = e.target.id
-                groupId = parseInt(id) < parseInt(clickId) ? id + clickId : clickId + id
-                messages.innerHTML = ''
-                $.ajax(
-                    {
-                        url: `/chat/chats/${groupId}/`,
-                        type: "GET",
-                        headers: {
-                            "X-CSRFToken": getCookie("csrftoken"),
-                        },
-                        contentType: false,
-                        processData: false,
-                        success: function (getData) {
-                            const data = JSON.parse(getData)
-                            for (let i = 0; i < data.length; i++) {
-                                if (data[i].Text != null) {
-                                    let div = document.createElement("div")
-                                    let p = document.createElement("p")
-                                    let text = document.createTextNode(data[i].Text)
-                                    p.append(text)
-                                    p.style.fontSize = "25px"
-                                    div.style.display = "flex"
-                                    if (data[i].sender !== id)
-                                        div.style.justifyContent = "flex-end"
-                                    else
-                                        div.style.justifyContent = "flex-start"
-                                    div.style.padding = "10px"
-                                    div.append(p)
-                                    messages.append(div)
-                                }
-                                else {
-                                    let div = document.createElement("div")
-                                    div.style.padding = "10px"
-                                    div.style.display = "flex"
-                                    if (data[i].sender !== id)
-                                        div.style.justifyContent = "flex-end"
-                                    else
-                                        div.style.justifyContent = "flex-start"
-                                    var x = document.createElement("AUDIO")
-                                    x.src = data[i].Audio
-                                    x.setAttribute("controls", "controls");
-                                    div.append(x)
-                                    messages.append(div)
-                                }
-                            }
-                        }
-                    });
-                url = `ws://${window.location.host}/ws/${groupId}`
-                ChatSocketDict[groupId] = new WebSocket(url)
-                ChatSocketDict[groupId].onmessage = (e) => {
-                    let data = JSON.parse(e.data)
-                    if (data.type == "chat") {
-                        let div = document.createElement("div")
-                        div.style.display = "flex"
-                        div.style.justifyContent = "flexEnd"
-                        let text = document.createTextNode(data.message)
-                        div.style.padding = "10px"
-                        div.append(text)
-                        messages.append(div)
-                    }
-                    else if (data.type == "audio") {
-                        let div = document.createElement("div")
-                        div.style.padding = "10px"
-                        var x = document.createElement("AUDIO")
-                        x.src = data.message
-                        x.setAttribute("controls", "controls");
-                        div.append(x)
-                        messages.append(div)
-                    }
-                }
-                if (messagePage.classList.contains("hidden")) {
-                    messagePage.style.display = "block"
-                    messagePage.classList.remove("hidden")
-                }
-            })
-            // Socket Messages
-
-
-            // RTC FOR AUDIO
-            record.onclick = (e) => {
-                console.log("Recorde")
-                recorded = true
-                navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: false
-                }).then(handleSuccess)
-            }
-            const handleSuccess = (stream) => {
-                const options = { mimeType: 'audio/webm' };
-                const recordedChunks = [];
-                const mediaRecorder = new MediaRecorder(stream, options);
-                mediaRecorder.addEventListener('dataavailable', function (e) {
-                    if (e.data.size > 0) recordedChunks.push(e.data);
-                });
-
-                mediaRecorder.addEventListener('stop', function () {
-                    let blob = new Blob(recordedChunks)
-                    sendAudio(blob)
-
-                });
-
-                stop.addEventListener('click', function () {
-                    recorded = false
-                    mediaRecorder.stop();
-                    stream.getTracks().forEach(function (track) {
-                        if (track.readyState == 'live' && track.kind === 'audio') {
-                            track.stop();
-                        }
-                    });
-                });
-                mediaRecorder.start();
-            };
-
-            // AJAX
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        // Does this cookie string begin with the name we want?
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
-            function sendAudio(blob) {
-                var wavFile = new File([blob], "audio.wav");
-                var form = new FormData();
-                form.append("myAudio", wavFile);
-                form.append("id", groupId)
-                $.ajax(
-                    {
-                        url: "/chat/audio/aud/",
-                        type: "POST",
-                        data: form,
-                        headers: {
-                            "X-CSRFToken": getCookie("csrftoken"),
-                        },
-                        contentType: false,
-                        processData: false,
-                        success: function (getData) {
-                            console.log(getData)
-                            let doc = getData
-                            console.log(doc)
-                            ChatSocketDict[groupId].send(JSON.stringify({
-                                "message": doc,
-                                "type": "audio",
-                                "sender": id,
-                                "receiver": clickId,
-                            }))
-
-
-                            // ChatSocket.send(JSON.stringify({
-                            //     "type":"audio",
-                            //     "path":getData
-                            // }))
-
-                        }
-                    });
-            }
-
         </script>
+        <script src="/static/Javascript/Socket.js"></script>
+        <script src="/static/Javascript/Audio_RTC.js"></script>
+        <script src="/static/Javascript/Ajax.js"></script>
+        <script src="/static/Javascript/message.js"></script>
+        <!-- SCRIPT FOR PLAIN JAVASCRIPT -->
+
     </body>
 
 </html>

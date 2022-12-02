@@ -27,4 +27,3 @@ def audioEncrypt(KEY):
     # code for AES implementation
     # row,col = np_data.shape
     # str_data = np_data.tostring()
-    # print(np.fromstring(str_data,dtype=np.int64).reshape(row,col))

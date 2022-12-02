@@ -7,7 +7,6 @@ class Chats(models.Model):
     sender = models.CharField(max_length=12)
     groupId = models.CharField(max_length=12)
     receiver = models.CharField(max_length=12)
-    Text = models.CharField(max_length=122, null=True)
     Audio = models.CharField(max_length=122, null=True)
     EncryptedText = models.CharField(max_length=1000, null=True)
 

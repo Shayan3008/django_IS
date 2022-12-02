@@ -3,7 +3,7 @@ import json
 from asgiref.sync import async_to_sync
 from chats.models import Chats, KeyRoom
 from chats.audio.audioEncryption import audioEncrypt
-from kellanb_cryptography import aes
+from kellanb_cryptography import aes, key
 
 class ChatConsumer(WebsocketConsumer):
 
@@ -13,7 +13,13 @@ class ChatConsumer(WebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
-        print(self.channel_name)
+        keys = KeyRoom.objects.filter(groupId=self.room_group_name)
+        if len(keys) > 0:
+            print('This is the keys:', len(keys))
+            self.keys = keys[0].key
+        else:
+            self.keys = key.gen_random_key()
+            KeyRoom.objects.create(groupId=self.room_group_name, key=self.keys)
         self.accept()
         self.send(json.dumps({
             "type": "Connection establish",
@@ -21,7 +27,6 @@ class ChatConsumer(WebsocketConsumer):
         }))
 
     def receive(self, text_data):
-        # print(text_data["type"])
         text_data_json = json.loads(text_data)
         if text_data_json["type"] == "audio":
             Chats.objects.create(
@@ -41,21 +46,19 @@ class ChatConsumer(WebsocketConsumer):
             )
         else:
             message = text_data_json["message"]
-            chat_key = KeyRoom.objects.filter(
-                groupId=self.room_group_name)[0].key
-            cipher_text = aes.encrypt_aes(message, chat_key)
+
+            cipher_text = aes.encrypt_aes(message, self.keys)
             Chats.objects.create(
                 sender=text_data_json["sender"],
                 receiver=text_data_json["receiver"],
                 groupId=self.room_group_name,
-                Text=message,
                 EncryptedText=cipher_text
             )
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
                     "type": "chat_message",
-                    "message": message,
+                    "message": cipher_text,
                     "type2": "chat",
                     "sender": text_data_json["sender"],
                     "receiver": text_data_json["receiver"],
@@ -78,7 +81,7 @@ class ChatConsumer(WebsocketConsumer):
 
             self.send(json.dumps({
                 "type": "chat",
-                "message": message,
+                "message": aes.decrypt_aes(message, self.keys),
                 "sender": event["sender"],
                 "receiver": event["receiver"],
                 "groupId": self.room_group_name

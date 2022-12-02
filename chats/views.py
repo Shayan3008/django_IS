@@ -5,13 +5,13 @@ from django.http import HttpResponseRedirect
 from chats.audio.keyGeneration import keyGeneration
 from chats.models import KeyRoom
 from chats.models import Chats
+from kellanb_cryptography import aes
 import json
 
 # Create your views here.
 
 
 def index(request, userId):
-    print(request.session)
     if request.session.has_key("user") == False:
         return HttpResponseRedirect("/")
     context = {}
@@ -46,7 +46,15 @@ def handleUploadFile(f):
 
 
 def chats(request, groupId):
-    chats = Chats.objects.filter(groupId = groupId)
-    print(type(chats))
-    print(list(chats.values()))
-    return HttpResponse(json.dumps(list(chats.values())))
+    chats = Chats.objects.filter(groupId=groupId)
+    if chats.exists:
+        data = list(chats.values())
+        keyObject = KeyRoom.objects.filter(groupId=groupId)[0].key
+        print(keyObject)
+        for i in range(len(data)):
+            print(data[i]['EncryptedText'])
+            if data[i]['Audio'] == None:
+                data[i]['EncryptedText'] = aes.decrypt_aes(
+                    data[i]['EncryptedText'], keyObject)
+        print(data)
+        return HttpResponse(json.dumps(data))
