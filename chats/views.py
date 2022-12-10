@@ -50,11 +50,8 @@ def chats(request, groupId):
     if chats.exists:
         data = list(chats.values())
         keyObject = KeyRoom.objects.filter(groupId=groupId)[0].key
-        print(keyObject)
         for i in range(len(data)):
-            print(data[i]['EncryptedText'])
             if data[i]['Audio'] == None:
                 data[i]['EncryptedText'] = aes.decrypt_aes(
                     data[i]['EncryptedText'], keyObject)
-        print(data)
         return HttpResponse(json.dumps(data))

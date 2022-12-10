@@ -56,8 +56,13 @@ document.querySelectorAll(".messageOpen").forEach(el => el.onclick = (e) => {
         let data = JSON.parse(e.data)
         if (data.type == "chat") {
             let div = document.createElement("div")
+
             div.style.display = "flex"
-            div.style.justifyContent = "flexEnd"
+            div.style.justifyContent = "flex-end"
+            if (data.sender !== id)
+                div.style.justifyContent = "flex-end"
+            else
+                div.style.justifyContent = "flex-start"
             let text = document.createTextNode(data.message)
             div.style.padding = "10px"
             div.append(text)
@@ -67,6 +72,10 @@ document.querySelectorAll(".messageOpen").forEach(el => el.onclick = (e) => {
         else if (data.type == "audio") {
             let div = document.createElement("div")
             div.style.padding = "10px"
+            if (data.sender !== id)
+                div.style.justifyContent = "flex-end"
+            else
+                div.style.justifyContent = "flex-start"
             var x = document.createElement("AUDIO")
             x.src = data.message
             x.setAttribute("controls", "controls");
